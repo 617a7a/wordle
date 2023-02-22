@@ -1,7 +1,7 @@
 use colored::Colorize;
 use rayon::prelude::*;
 use smooth::Smooth;
-use std::{collections::HashMap, ops::AddAssign, sync::Mutex};
+use std::{collections::HashMap, io::Write, ops::AddAssign, sync::Mutex};
 
 const WORDS: &str = include_str!("../../wordle/src/words.txt");
 
@@ -38,7 +38,12 @@ fn main() {
             );
             words = filtered_results;
             if words.len() < 5 {
-                println!("Try one of these: {:?}", words.iter().map(|s| s.blue()).collect::<Vec<_>>());
+                let fmttd_list = words
+                    .iter()
+                    .map(|s| s.blue().to_string())
+                    .collect::<Vec<String>>()
+                    .join(", ");
+                println!("Try one of these: {}", fmttd_list);
             } else {
                 println!("Try {}", words[0].blue());
             }
@@ -142,7 +147,8 @@ fn get_first_guess(words: &Vec<String>, strategy: FirstGuessStrategy) -> String 
             println!(
                 "Generated first guess in in {:?} ({}B char/s)\n",
                 start.elapsed(),
-                ((total_chars as f64 / start.elapsed().as_secs_f64()) / 1_000_000_000.0).smooth_str()
+                ((total_chars as f64 / start.elapsed().as_secs_f64()) / 1_000_000_000.0)
+                    .smooth_str()
             );
             return guess;
         }
@@ -173,7 +179,8 @@ fn get_first_guess(words: &Vec<String>, strategy: FirstGuessStrategy) -> String 
             println!(
                 "Generated first guess in in {:?} ({}B char/s)\n",
                 start.elapsed(),
-                ((total_chars as f64 / start.elapsed().as_secs_f64()) / 1_000_000_000.0).smooth_str()
+                ((total_chars as f64 / start.elapsed().as_secs_f64()) / 1_000_000_000.0)
+                    .smooth_str()
             );
             return guess;
         }
@@ -217,6 +224,8 @@ fn get_guess_result() -> GuessResult {
 /// expected length, the user is prompted to try again.
 fn read_line(expected_length: usize) -> String {
     let mut buffer = String::new();
+    print!(">> ");
+    std::io::stdout().flush().unwrap();
     std::io::stdin().read_line(&mut buffer).unwrap();
     buffer = buffer.trim().to_string();
     if buffer.len() != expected_length {
@@ -308,7 +317,9 @@ fn choose_optimal_strategy(words: &Vec<String>) -> (FirstGuessStrategy, String) 
     results.iter().for_each(|(s, w)| {
         println!(
             "{:?} strategy found {} ({}%) words solvable within 5 guesses",
-            s, w.0, (w.0 as f64 / words.len() as f64 * 100.0).smooth_str()
+            s,
+            w.0,
+            (w.0 as f64 / words.len() as f64 * 100.0).smooth_str()
         )
     });
     let winner = results.iter().max_by_key(|(_, (count, _))| *count).unwrap();
