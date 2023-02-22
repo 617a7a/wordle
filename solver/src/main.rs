@@ -1,4 +1,5 @@
 use colored::Colorize;
+use rand::Rng;
 use rayon::prelude::*;
 use smooth::Smooth;
 use std::{collections::HashMap, io::Write, ops::AddAssign, sync::Mutex};
@@ -100,8 +101,9 @@ fn filter_using_known_info(words: &Vec<String>, known_info: &Vec<GuessResult>) -
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 enum FirstGuessStrategy {
-    Simple,
-    PositionAware,
+    FrequencySimple,
+    FrequencyPositionAware,
+    Random,
 }
 
 /// Returns the optimal starting guess for the wordset
@@ -110,7 +112,7 @@ fn get_first_guess(words: &Vec<String>, strategy: FirstGuessStrategy) -> String 
     // ~3%
     let total_chars = words.iter().map(|word| word.len()).sum::<usize>();
     match strategy {
-        FirstGuessStrategy::PositionAware => {
+        FirstGuessStrategy::FrequencyPositionAware => {
             let start = std::time::Instant::now();
             // our first guess is constructed off the most common character in each position
             let frequencies: [HashMap<char, usize>; 5] = words.iter().fold(
@@ -152,7 +154,7 @@ fn get_first_guess(words: &Vec<String>, strategy: FirstGuessStrategy) -> String 
             );
             return guess;
         }
-        FirstGuessStrategy::Simple => {
+        FirstGuessStrategy::FrequencySimple => {
             // count all characters and take the top 5
             let mut char_counts: HashMap<char, usize> = HashMap::new();
             let start = std::time::Instant::now();
@@ -184,6 +186,15 @@ fn get_first_guess(words: &Vec<String>, strategy: FirstGuessStrategy) -> String 
             );
             return guess;
         }
+        FirstGuessStrategy::Random => {
+            // create 5 random characters
+            let mut rng = rand::thread_rng();
+            let mut guess = String::new();
+            for _ in 0..5 {
+                guess.push(rng.gen_range('a'..='z'));
+            }
+            return guess;
+        },
     }
 }
 
@@ -196,7 +207,7 @@ fn get_guess_result() -> GuessResult {
             break;
         }
         println!(
-            "Please enter the {t} characters. For non-{t} characters, use '-'",
+            "Enter the {t} characters. For non-{t} characters, use '-':",
             t = match t {
                 "yellow" => "yellow".yellow(),
                 "red" => "red".red(),
@@ -228,6 +239,12 @@ fn read_line(expected_length: usize) -> String {
     std::io::stdout().flush().unwrap();
     std::io::stdin().read_line(&mut buffer).unwrap();
     buffer = buffer.trim().to_string();
+
+    if buffer == "exit" {
+        println!("Exiting...");
+        std::process::exit(0);
+    }
+
     if buffer.len() != expected_length {
         println!("Please enter exactly {} characters.", expected_length);
         read_line(expected_length)
@@ -305,8 +322,9 @@ fn choose_optimal_strategy(words: &Vec<String>) -> (FirstGuessStrategy, String) 
     let mut results: HashMap<FirstGuessStrategy, (i32, String)> = HashMap::new();
 
     [
-        FirstGuessStrategy::Simple,
-        FirstGuessStrategy::PositionAware,
+        FirstGuessStrategy::FrequencySimple,
+        FirstGuessStrategy::FrequencyPositionAware,
+        FirstGuessStrategy::Random,
     ]
     .iter()
     .for_each(|strategy| {
