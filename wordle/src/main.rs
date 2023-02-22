@@ -64,16 +64,16 @@ fn process_input(word: &str, input: String) -> Result<bool, ProcessInputError> {
         // right letter, right position
         if word.contains(c) {
             if word.chars().nth(i).unwrap() == c {
-                guessed.push_str(&format!("{} ", c.to_string().green()));
+                guessed.push_str(&format!("{}", c.to_string().green()));
                 correct += 1;
             } else {
                 // right letter, wrong position
-                guessed.push_str(&format!("{} ", c.to_string().yellow()));
+                guessed.push_str(&format!("{}", c.to_string().yellow()));
             }
         // wrong letter
         } else {
             guessed.push_str(&format!(
-                "{} ",
+                "{}",
                 input.chars().nth(i).unwrap().to_string().red()
             ));
         }
