@@ -84,14 +84,28 @@ fn main() {
     let first_guess: String;
 
     if let Some(strat) = cache.strats.get(&words_digest.as_bytes().to_vec()) {
-        println!("Using {} strategy from cache at {}/strategies for wordset {}", format!("{:?}", strat.0).magenta(), cache_dir, words_digest.to_hex().cyan());
+        println!(
+            "Using {} strategy from cache at {}/strategies for wordset {}",
+            format!("{:?}", strat.0).magenta(),
+            cache_dir,
+            words_digest.to_hex().cyan()
+        );
         first_guess = strat.1.clone();
     } else {
-        println!("{}", format!("No cached strategy found, generating one for wordset {}", words_digest.to_hex()).black());
+        println!(
+            "{}",
+            format!(
+                "No cached strategy found, generating one for wordset {}",
+                words_digest.to_hex()
+            )
+            .black()
+        );
         let (strat, fw) = choose_optimal_strategy(&words);
 
         let mut cache = cache;
-        cache.strats.insert(words_digest.as_bytes().to_vec(), (strat, fw.clone()));
+        cache
+            .strats
+            .insert(words_digest.as_bytes().to_vec(), (strat, fw.clone()));
 
         first_guess = fw;
 
@@ -100,7 +114,10 @@ fn main() {
                 &rkyv::to_bytes::<WordListCache, 4096>(&cache).expect("Could not serialise cache"),
             )
             .expect("Could not write to cache file");
-        println!("{}", format!("Cached strategy in {}/strategies", cache_dir).black());
+        println!(
+            "{}",
+            format!("Cached strategy in {}/strategies", cache_dir).black()
+        );
     }
 
     let mut last_guess = first_guess.clone();
@@ -140,7 +157,7 @@ fn main() {
                 },
             );
             let start = std::time::Instant::now();
-            words = optimise_results(filtered_results, &words, &known_info);
+            words = optimise_results(filtered_results, &known_info);
             let elapsed = start.elapsed();
             println!(
                 "{} Scored & reordered results",
@@ -237,11 +254,7 @@ fn filter_using_known_info(
 }
 
 /// reorders a wordlist to optimise the next guess using the strategy
-fn optimise_results(
-    results: Vec<ScoredWord>,
-    words: &Vec<ScoredWord>,
-    known_info: &Vec<GuessResult>,
-) -> Vec<ScoredWord> {
+fn optimise_results(results: Vec<ScoredWord>, known_info: &Vec<GuessResult>) -> Vec<ScoredWord> {
     // if the length is 0, no optimisation is required
     if results.len() == 0 {
         return results;
@@ -276,7 +289,7 @@ fn optimise_results(
     // 2. score each word based on the frequency of the yellow characters
     // 3. sort the words by their score
 
-    let frequencies: [[usize; 26]; 5] = words.iter().fold(
+    let frequencies: [[usize; 26]; 5] = results.iter().fold(
         [[0; 26], [0; 26], [0; 26], [0; 26], [0; 26]],
         |mut acc, sw| {
             for (i, c) in sw.word.chars().enumerate() {
@@ -292,10 +305,10 @@ fn optimise_results(
             let mut score = 1;
             for (i, c) in sw.word.chars().enumerate() {
                 // if all the known info for this position is yellow, we can score
-                if known_info.iter().all(|guess| match guess.0[i] {
-                    Character::Yellow(_) => true,
-                    _ => false,
-                }) {
+                if known_info
+                    .iter()
+                    .all(|guess| matches!(guess.0[i], Character::Yellow(_)))
+                {
                     score += frequencies[i][c as usize - 97];
                 }
             }
@@ -469,7 +482,7 @@ fn read_line(expected_length: usize, guess: &String) -> String {
     }
 
     // ensure string is lowercase a-z or -
-    if !buffer.chars().all(|c| c.is_ascii_lowercase() || c == '-') {
+    if !buffer.chars().all(|c| matches!(c, 'a'..='z' | '-')) {
         println!("Please enter only lowercase letters or '-'.");
         read_line(expected_length, guess)
     } else if buffer.len() != expected_length {
@@ -520,7 +533,7 @@ fn test_strategy(words: &Vec<ScoredWord>, strategy: Strategy) -> (i32, String) {
                 let result = calculate_guess_result(&sw.word, &guess);
                 known_info.push(result);
                 possible_words = filter_using_known_info(&possible_words, &known_info);
-                possible_words = optimise_results(possible_words, words, &known_info);
+                possible_words = optimise_results(possible_words, &known_info);
                 if possible_words[0].word == *sw.word {
                     return 1;
                 }
