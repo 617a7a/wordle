@@ -178,7 +178,9 @@ fn main() {
                 );
             }
         }
-        println!("\n{}", format!("Guess {} of 5", i + 1).black());
+        if i != 4 {
+            println!("\n{}", format!("Guess {} of 5", i + 1).black());
+        }
     }
 }
 
