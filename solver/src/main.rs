@@ -85,7 +85,7 @@ fn main() {
 
     if let Some(strat) = cache.strats.get(&words_digest.as_bytes().to_vec()) {
         println!("Using {} strategy from cache at {}/strategies for wordset {}", format!("{:?}", strat.0).magenta(), cache_dir, words_digest.to_hex().cyan());
-        first_guess = get_first_guess(&words, strat.0)
+        first_guess = strat.1.clone();
     } else {
         println!("{}", format!("No cached strategy found, generating one for wordset {}", words_digest.to_hex()).black());
         let (strat, fw) = choose_optimal_strategy(&words);
