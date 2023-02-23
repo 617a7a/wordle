@@ -48,8 +48,8 @@ enum ProcessInputError {
     InvalidLength,
 }
 
-/// Checks the word against the input and returns true if the word is guessed correctly
-/// We also print the word, with some formatting
+/// Checks the word against the input and returns true if the word is guessed
+/// correctly We also print the word, with some formatting
 fn process_input(word: &str, input: String) -> Result<bool, ProcessInputError> {
     if input == "exit" {
         println!("Exiting. The word was {}!", word.blue());
